@@ -1,0 +1,16 @@
+network.env
+__pycache__/
+*.py[cod]
+.DS_Store
+**/runtime/*
+!**/runtime/.gitkeep
+mac2_edge/certs/*
+!mac2_edge/certs/.gitkeep
+shared/trusted/*
+!shared/trusted/.gitkeep
+*.key
+*.pem
+*.csr
+*.srl
+evidence/collected/
+tests/.work/

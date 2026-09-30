@@ -1,0 +1,43 @@
+# Generated from network.env. One worker makes sequential round robin clear.
+worker_processes 1;
+pid "@@RUNTIME@@/nginx.pid";
+error_log "@@RUNTIME@@/error.log" info;
+events { worker_connections 256; }
+http {
+    default_type application/octet-stream;
+    log_format phase1 '$remote_addr:$remote_port "$request" $status '
+                      'upstream=$upstream_addr backend=$upstream_http_x_backend '
+                      'http=$server_protocol tls=$ssl_protocol';
+    access_log "@@RUNTIME@@/access.log" phase1;
+    client_body_temp_path "@@RUNTIME@@/client_body";
+    proxy_temp_path "@@RUNTIME@@/proxy_temp";
+    fastcgi_temp_path "@@RUNTIME@@/fastcgi_temp";
+    uwsgi_temp_path "@@RUNTIME@@/uwsgi_temp";
+    scgi_temp_path "@@RUNTIME@@/scgi_temp";
+    upstream backend_pool {
+        server @@BACKEND_A_IP@@:@@BACKEND_A_PORT@@;
+        server @@BACKEND_B_IP@@:@@BACKEND_B_PORT@@;
+    }
+    server {
+        listen @@HTTPS_PORT@@ ssl@@HTTP2_LISTEN@@;
+        @@HTTP2_DIRECTIVE@@
+        server_name @@APP_DOMAIN@@ @@API_DOMAIN@@;
+        ssl_certificate "@@CERTS@@/server.crt";
+        ssl_certificate_key "@@CERTS@@/server.key";
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_session_cache off;
+        ssl_session_tickets off;
+        location / {
+            proxy_pass http://backend_pool;
+            proxy_http_version 1.1;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header Connection "";
+            proxy_connect_timeout 3s;
+            proxy_read_timeout 10s;
+            # Standard nginx error/timeout retry behavior is left at its default.
+        }
+    }
+}
