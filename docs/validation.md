@@ -4,7 +4,7 @@ All 12 assignment pages were read, including the boundary between the two phases
 
 ## Checks completed locally
 
-Final results: **27 regression tests passed**, syntax checks passed for **18 Python files and 32 shell files**, and the full real-service integration run passed, including restoration of stopped backends. The repository audit also validated documentation commands, file links, configuration isolation, and the 25-step README.
+Final results: **28 regression tests passed**, syntax checks passed for **18 Python files and 32 shell files**, and the full real-service integration run passed, including restoration of stopped backends. The repository audit also validated documentation commands, file links, configuration isolation, and the 25-step README.
 
 - Python syntax and shell syntax, including Bash/zsh syntax of all documentation command blocks.
 - All README script targets and local Markdown links; Steps 1–25 in the requested order.
@@ -13,7 +13,7 @@ Final results: **27 regression tests passed**, syntax checks passed for **18 Pyt
 - Both backends: `/`, `/api/status`, correct JSON/X-Backend/Content-Type/Content-Length, HEAD, 404, shared cache representation, weak/list/star validators, and bodyless 304.
 - Client DNS logic with simulated macOS commands: original automatic and explicit DNS, repeated setup, wrong-server/repair, failure preservation, foreign-Mac backup rejection, and restore using the macOS `Empty` keyword.
 - Safe process checks reject unrelated PIDs; exited children are recognized as stopped. A failed native nginx test prevents startup.
-- Official load-balancing logic passes with A and B and rejects an always-A result; cache checks reject a 304 body.
+- Official load-balancing logic passes with A and B and rejects an always-A result; cache checks reject a 304 body. The curl wrapper accepts an absent output file for 304 while still rejecting missing output for a normal 200 response.
 - Guided launcher: configuration wizard preserves valid files on invalid input, reuses existing settings and custom backend ports, rejects the wrong physical role, starts Mac 4's backend before waiting on client dependencies, rejects mismatched certificate fingerprints without importing trust, verifies trust after a matched import, and preserves DNS service if restoration fails.
 - Real detached backend startup, response, restart, and shutdown; native background nginx/dnsmasq startup and stop; persistent DNS log output; real automatic public-certificate retrieval and its SHA-256 fingerprint match. System-trust installation in the launcher is simulated in tests, not applied to the development machine.
 

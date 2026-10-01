@@ -130,6 +130,25 @@ class HttpTests(unittest.TestCase):
         self.assertEqual(bodies[0], bodies[1])
 
 
+class CurlOutputTests(unittest.TestCase):
+    def test_missing_output_file_is_allowed_only_for_304(self):
+        for status in (304, 200):
+            with self.subTest(status=status):
+                def curl_without_body(command, **kwargs):
+                    Path(command[command.index("--dump-header") + 1]).write_text(
+                        f'HTTP/1.1 {status}\r\nETag: "cn-project-v1"\r\n\r\n')
+                    return subprocess.CompletedProcess(command, 0, f"{status} 1.1", "")
+                with patch.object(checks.subprocess, "run", side_effect=curl_without_body):
+                    if status == 304:
+                        code, _, headers, body = checks.request("https://app.unit.test/cache-demo", show=False)
+                        self.assertEqual(code, 304)
+                        self.assertEqual(headers["etag"], '"cn-project-v1"')
+                        self.assertEqual(body, b"")
+                    else:
+                        with self.assertRaises(FileNotFoundError):
+                            checks.request("https://app.unit.test/cache-demo", show=False)
+
+
 class DnsRollbackTests(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()

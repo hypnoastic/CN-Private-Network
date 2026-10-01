@@ -30,15 +30,17 @@ def request(url, headers=(), version="--http1.1", show=True):
         result = subprocess.run(command + [url], capture_output=True, text=True, env=environment)
         if result.returncode:
             raise ValueError(f"curl failed for {url}: {result.stderr.strip()} (check DNS, TCP reachability, and installed certificate trust)")
+        status, protocol = result.stdout.split()
         text = head.read_text()
-        payload = body.read_bytes()
+        # Some curl versions omit the output file for a bodyless 304.
+        # Keep missing output for other statuses visible as an error.
+        payload = b"" if status == "304" and not body.exists() else body.read_bytes()
         if show:
             for header in headers:
                 print(f"Request header: {header}")
             print(f"\n{url}\n{text.strip()}")
             if payload:
                 print(payload.decode(errors="replace").strip())
-        status, protocol = result.stdout.split()
         parsed = {}
         for line in text.splitlines():
             if ":" in line:
