@@ -22,6 +22,7 @@ from env_loader import ROOT, load_env
 from service_control import process_at
 
 RUNTIME = ROOT / "shared/runtime"
+PEOPLE = {1: "Yash", 2: "Ritesh", 3: "Parul", 4: "Dhruv"}
 ROLES = {1: "DNS + main client", 2: "nginx + HTTPS + load balancer", 3: "Backend A", 4: "Backend B + client"}
 DIRECTORIES = {1: "mac1_dns_client", 2: "mac2_edge", 3: "mac3_backend_a", 4: "mac4_backend_b_client"}
 CHILDREN = {}
@@ -94,7 +95,7 @@ def configure(role, force=False):
                 print("Existing configuration is invalid; the wizard will replace it only after validation.")
         while True:
             team = prompt("Team name", previous.get("TEAM_NAME", "team1"))
-            ips = [prompt(f"Mac {n} IPv4", previous.get(f"MAC{n}_IP", local[0] if n == role and len(local) == 1 else None)) for n in range(1, 5)]
+            ips = [prompt(f"{PEOPLE[n]} IPv4", previous.get(f"MAC{n}_IP", local[0] if n == role and len(local) == 1 else None)) for n in range(1, 5)]
             port = prompt("HTTPS port", previous.get("HTTPS_PORT", "8443"))
             try:
                 env = write_configuration(configuration_text(team, ips, port, previous))
@@ -103,7 +104,7 @@ def configure(role, force=False):
                 print(f"Please correct the configuration: {exc}")
         print(f"Saved {ROOT / 'network.env'}. Role aliases and both domains were filled automatically.")
     for n in range(1, 5):
-        print(f"  Mac {n}: {env[f'MAC{n}_IP']} - {ROLES[n]}")
+        print(f"  {PEOPLE[n]} (Mac {n}): {env[f'MAC{n}_IP']} - {ROLES[n]}")
     print(f"  App: https://{env['APP_DOMAIN']}:{env['HTTPS_PORT']}")
     return env
 
@@ -111,7 +112,7 @@ def configure(role, force=False):
 def check_local_role(role, env):
     actual = addresses()
     if env[f"MAC{role}_IP"] not in actual:
-        raise ValueError(f"You selected Mac {role}, configured as {env[f'MAC{role}_IP']}, but this Mac has {actual}. "
+        raise ValueError(f"You selected Mac {role} ({PEOPLE[role]}), configured as {env[f'MAC{role}_IP']}, but this Mac has {actual}. "
                          "Select the correct role or use menu option 5 to correct network.env.")
 
 
@@ -223,7 +224,7 @@ def show_fingerprint(path):
 
 def fetch_certificate(env):
     # Bootstrap ONLY: read the presented certificate, without making an HTTP
-    # request. It is untrusted until its fingerprint is compared with Mac 2.
+    # request. It is untrusted until its fingerprint is compared with Ritesh.
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     context.check_hostname = False
     context.verify_mode = ssl.CERT_NONE
@@ -236,7 +237,7 @@ def fetch_certificate(env):
     certificate = run(["/usr/bin/openssl", "x509", "-in", candidate, "-noout", "-text"], capture=True).stdout
     names = set(re.findall(r"DNS:([^,\s]+)", certificate))
     if not {env["APP_DOMAIN"], env["API_DOMAIN"]}.issubset(names):
-        raise ValueError("The certificate returned by Mac 2 is missing a required DNS SAN. Check Mac 2's network.env and certificate.")
+        raise ValueError("The certificate returned by Ritesh is missing a required DNS SAN. Check Ritesh's network.env and certificate.")
     return candidate
 
 
@@ -253,10 +254,10 @@ def trust_for_client(role, env):
         if role != 2:
             expected = show_fingerprint(candidate)
             print("The certificate was downloaded automatically, but has not been trusted yet.")
-            print("Paste the full fingerprint DISPLAYED ON MAC 2 to verify its identity (q to finish later).")
-            supplied = prompt("Mac 2 SHA-256 fingerprint")
+            print("Paste the full fingerprint DISPLAYED ON RITESH to verify its identity (q to finish later).")
+            supplied = prompt("Ritesh SHA-256 fingerprint")
             if re.sub(r"[:\s]", "", supplied).upper() != expected:
-                raise ValueError("Fingerprint did not match; no trust changes made. Check Mac 2 and retry option 2.")
+                raise ValueError("Fingerprint did not match; no trust changes made. Check Ritesh and retry option 2.")
         print("Installing this project's certificate into the macOS System trust store; sudo may ask for your password.")
         script("shared/trust_certificate.sh", str(candidate))
         if not system_trusts(candidate, env):
@@ -282,8 +283,8 @@ def finish_client(role, env, wait_seconds):
         return
     if role == 2 and not running(2):
         raise ValueError("nginx has not started yet. Choose option 1 after both backends are running.")
-    wait_for("Mac 1 DNS with both records pointing to Mac 2", lambda: dns_ready(env), wait_seconds)
-    wait_for("Mac 2 HTTPS edge", lambda: tcp_ready(env["EDGE_IP"], env["HTTPS_PORT"]), wait_seconds)
+    wait_for("Yash DNS with both records pointing to Ritesh", lambda: dns_ready(env), wait_seconds)
+    wait_for("Ritesh HTTPS edge", lambda: tcp_ready(env["EDGE_IP"], env["HTTPS_PORT"]), wait_seconds)
     trust_for_client(role, env)
     set_dns(role, env)
     script("shared/verify_phase1.sh")
@@ -306,7 +307,7 @@ def setup(role, wait_seconds):
         run([sys.executable, ROOT / "mac2_edge/configure.py"])
         script("mac2_edge/generate_certificate.sh")
         show_fingerprint(ROOT / "mac2_edge/certs/server.crt")
-        wait_for("Backend A on Mac 3 and Backend B on Mac 4", lambda: tcp_ready(env["BACKEND_A_IP"], env["BACKEND_A_PORT"]) and tcp_ready(env["BACKEND_B_IP"], env["BACKEND_B_PORT"]), wait_seconds)
+        wait_for("Backend A on Parul and Backend B on Dhruv", lambda: tcp_ready(env["BACKEND_A_IP"], env["BACKEND_A_PORT"]) and tcp_ready(env["BACKEND_B_IP"], env["BACKEND_B_PORT"]), wait_seconds)
         script("shared/test_backends.sh")
         if running(role):
             stop_service(role)
@@ -316,7 +317,7 @@ def setup(role, wait_seconds):
     if result.returncode:
         print("Inventory capture needs attention; you can rerun shared/record_inventory.sh after checking the LAN interface.")
     finish_client(role, env, wait_seconds)
-    print(f"\nPASS: Mac {role} setup completed. Services keep running after you exit this menu.")
+    print(f"\nPASS: {PEOPLE[role]} setup completed. Services keep running after you exit this menu.")
 
 
 def stop_and_restore(role):
@@ -324,12 +325,12 @@ def stop_and_restore(role):
     if role in (1, 2, 4):
         script("shared/restore_client_dns.sh")
     stop_service(role)
-    print(f"Mac {role} stopped. Other Macs must use their own stop/restore menu.")
+    print(f"{PEOPLE[role]} stopped. Other Macs must use their own stop/restore menu.")
 
 
 def status(role):
     pid = running(role)
-    print(f"Mac {role} ({ROLES[role]}): {'running, PID ' + str(pid) if pid else 'stopped'}")
+    print(f"{PEOPLE[role]} ({ROLES[role]}): {'running, PID ' + str(pid) if pid else 'stopped'}")
     for log in sorted((ROOT / DIRECTORIES[role] / "runtime").glob("*.log")):
         print(f"\n{log}\n" + "\n".join(log.read_text(errors="replace").splitlines()[-8:]))
     if (ROOT / "shared/runtime/client-dns.json").exists():
@@ -386,11 +387,13 @@ def main():
     print("Connect all four Macs to the same LAN. Run this launcher on all four; each starts only its own service.")
     if args.role is None:
         for role, label in ROLES.items():
-            print(f"  {role}. Mac {role} - {label}")
-        answer = prompt("Which Mac is this? Enter 1, 2, 3, or 4")
-        if answer not in ("1", "2", "3", "4"):
-            raise ValueError("Choose a Mac number from 1 to 4")
-        role = int(answer)
+            print(f"  {role}. {PEOPLE[role]} - {label}")
+        answer = prompt("Whose laptop is this? Enter a name or 1, 2, 3, 4").lower()
+        selections = {str(n): n for n in PEOPLE}
+        selections.update({name.lower(): n for n, name in PEOPLE.items()})
+        if answer not in selections:
+            raise ValueError("Choose Yash, Ritesh, Parul, Dhruv, or a number from 1 to 4")
+        role = selections[answer]
     else:
         role = args.role
     if args.action:
@@ -398,7 +401,7 @@ def main():
         return
     actions = {"1": "setup", "2": "verify", "3": "status", "4": "stop", "5": "configure"}
     while True:
-        print(f"\nMac {role} - {ROLES[role]}\n1. Full setup / start\n2. Finish client setup / run checks\n3. Status, logs, and certificate fingerprint\n4. Stop this Mac's service and restore its original DNS\n5. Create / edit shared network configuration\n0. Exit menu (services keep running)")
+        print(f"\n{PEOPLE[role]} - {ROLES[role]}\n1. Full setup / start\n2. Finish client setup / run checks\n3. Status, logs, and certificate fingerprint\n4. Stop this Mac's service and restore its original DNS\n5. Create / edit shared network configuration\n0. Exit menu (services keep running)")
         choice = prompt("Choose", "1")
         if choice == "0":
             print("Services keep running. Reopen bash setup.sh and choose 4 when finished.")

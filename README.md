@@ -8,7 +8,20 @@ Four physical Macs, one private LAN, one DNS server, one HTTPS nginx edge, and t
 bash setup.sh
 ```
 
-Select this Mac's number, then **1 — Full setup / start**. The launcher prompts for missing network settings, installs missing dependencies, starts this Mac's services in the background, generates/fetches the certificate, saves and sets DNS, installs trust, and runs the checks. Run it on all four Macs while they wait for each other. Mac 2 displays a certificate fingerprint to paste on Mac 1 and Mac 4; manual certificate-file transfer is unnecessary. Use option **2** to retry client setup once the other Macs are ready, **3** for status/logs, and **4** to stop and restore DNS. See [guided setup](docs/launcher.md).
+Select your name (Yash, Ritesh, Parul, or Dhruv), then **1 — Full setup / start**. The launcher prompts for missing network settings, installs missing dependencies, starts this Mac's services in the background, generates/fetches the certificate, saves and sets DNS, installs trust, and runs the checks. Run it on all four Macs while they wait for each other. Mac 2 displays a certificate fingerprint to paste on Mac 1 and Mac 4; manual certificate-file transfer is unnecessary. Use option **2** to retry client setup once the other Macs are ready, **3** for status/logs, and **4** to stop and restore DNS. See [guided setup](docs/launcher.md).
+
+### Your team assignment
+
+| Select | Person | Runs | Original folder/role |
+|---|---|---|---|
+| 1 | Yash | DNS + main client | Mac 1 / `mac1_dns_client/` |
+| 2 | Ritesh | nginx + HTTPS + load balancer | Mac 2 / `mac2_edge/` |
+| 3 | Parul | Backend A, port 3001 | Mac 3 / `mac3_backend_a/` |
+| 4 | Dhruv | Backend B, port 3002 + client | Mac 4 / `mac4_backend_b_client/` |
+
+The team ZIP includes **network.env prefilled with your four supplied/detected addresses**. Keep that file; do not overwrite it with the example. The menu accepts names or numbers. On a fresh Git clone, copy the team's `network.env` into the repository, since it stays excluded from Git. All services still read their addresses exclusively from that file.
+
+Start Parul first, then Dhruv, Yash, and Ritesh. While a launcher waits, start the next laptop. Ritesh displays the certificate fingerprint for Yash and Dhruv to paste. Use option 2 on any waiting clients once all services are running. Wi-Fi addresses can change; use option 5 to update `network.env` consistently on all four laptops if needed.
 
 The numbered steps below are the manual alternative and the evaluation/evidence guide.
 
@@ -95,7 +108,7 @@ Expected: all three filenames exist. Copy before starting services so no machine
 ## STEP 6 — RUN ON ALL FOUR MACS: create identical network.env files
 
 ```bash
-cp network.env.example network.env
+[ -f network.env ] || cp network.env.example network.env
 nano network.env
 ```
 
