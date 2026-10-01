@@ -153,7 +153,8 @@ def main():
     destination = env["MAC3_IP"] if args.action == "wrong-server" else env["DNS_IP"]
     print(f"Changing ONLY service {service!r} DNS to: {destination}")
     change(service, [destination])
-    print(f"Verified DNS now points to {destination}. Restore: bash shared/restore_client_dns.sh")
+    print(f"Saved DNS setting for {service!r}: {destination}. Active resolver still needs the DNS test.")
+    print("Restore: bash shared/restore_client_dns.sh")
 
 
 if __name__ == "__main__":

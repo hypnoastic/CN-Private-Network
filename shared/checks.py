@@ -70,10 +70,15 @@ def test_dns(env):
             print("\n$ " + " ".join(command + [env[key], "A"]))
             print(result.stdout.strip())
             require(result.returncode == 0, result.stderr or "dig could not contact the resolver")
+            require(f"SERVER: {env['DNS_IP']}#53" in result.stdout,
+                    f"This query used a resolver other than project DNS {env['DNS_IP']}. "
+                    "The saved service setting may differ from the active resolver. "
+                    "Retry bash shared/set_client_dns.sh, then bash shared/test_dns.sh. "
+                    "If it persists, inspect: scutil --dns; cat /etc/resolv.conf; "
+                    "networksetup -listnetworkserviceorder. Keep the original DNS backup.")
             require("status: NOERROR" in result.stdout, f"DNS did not return NOERROR for {env[key]}")
             answers = re.findall(r"^" + re.escape(env[key]) + r"\.\s+\d+\s+IN\s+A\s+(\S+)", result.stdout, re.M)
             require(answers == [env["EDGE_IP"]], f"{env[key]} should resolve only to {env['EDGE_IP']}; got {answers}")
-            require(f"SERVER: {env['DNS_IP']}#53" in result.stdout, "Resolver is not Mac 1; run this Mac's set_client_dns.sh")
     print("PASS: both names resolve to Mac 2 via direct and configured Mac 1 DNS.")
 
 
