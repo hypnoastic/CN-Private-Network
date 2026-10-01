@@ -2,6 +2,7 @@
 """Operate only this repository's foreground dnsmasq/nginx process."""
 import argparse
 import os
+import re
 import signal
 import subprocess
 import sys
@@ -36,10 +37,22 @@ def signal_process(pid, sig):
         subprocess.run(["sudo", "/bin/kill", f"-{sig.name.removeprefix('SIG')}", str(pid)], check=True)
 
 
+def configure_dns_logging(config, background):
+    # dnsmasq reads this directive from the config after command-line options.
+    # Use the generated config itself so a daemon cannot retain stderr logging.
+    destination = str(config.parent / "dnsmasq.log") if background else "-"
+    text, count = re.subn(r"^log-facility=.*$", lambda _: "log-facility=" + destination,
+                          config.read_text(), flags=re.M)
+    if count != 1:
+        raise ValueError("DNS config must contain one log-facility directive; rerun configure.py")
+    config.write_text(text)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("service", choices=("dns", "nginx"))
     parser.add_argument("action", choices=("start", "stop", "reload", "check-stopped"))
+    parser.add_argument("--background", action="store_true", help="start as a native daemon; used by setup.sh")
     args = parser.parse_args()
     dns = args.service == "dns"
     directory = ROOT / ("mac1_dns_client" if dns else "mac2_edge")
@@ -69,12 +82,16 @@ def main():
         raise ValueError(f"Missing {config}; run the role's configure.py first")
     env = load_env()
     if dns:
+        if args.action == "start":
+            configure_dns_logging(config, args.background)
         check = [binary, "--test", f"--conf-file={config}"]
-        command = [binary, "--keep-in-foreground", f"--conf-file={config}"]
+        command = [binary, f"--conf-file={config}"]
+        if not args.background:
+            command.append("--keep-in-foreground")
     else:
         base = [binary, "-p", str(directory) + "/", "-c", str(config), "-e", str(directory / "runtime/error.log")]
         check = base + ["-t"]
-        command = base + ["-g", "daemon off;"]
+        command = base if args.background else base + ["-g", "daemon off;"]
     # Never exec or signal a server after a failed native configuration test.
     privileged = dns or int(env["HTTPS_PORT"]) < 1024
     prefix = ["sudo"] if privileged and os.geteuid() != 0 else []
@@ -83,6 +100,15 @@ def main():
         signal_process(pid, signal.SIGHUP)
         print("nginx configuration validated; reload sent. Check runtime/error.log.")
         return 0
+    if args.background:
+        subprocess.run(prefix + command, check=True)
+        for _ in range(50):
+            pid = process_at(pidfile, config, name)
+            if pid:
+                print(f"Started project {name} in the background (PID {pid}). Logs: {directory / 'runtime'}")
+                return 0
+            time.sleep(0.1)
+        raise ValueError(f"{name} did not create a live PID; inspect {directory / 'runtime'}")
     print(f"Starting project {name} in the foreground. Keep this terminal open; Ctrl+C stops it.", flush=True)
     os.execvp((prefix + command)[0], prefix + command)
 

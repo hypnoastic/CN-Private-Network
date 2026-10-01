@@ -3,4 +3,4 @@ set -euo pipefail
 CN_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 python3 "$CN_DIR/shared/service_control.py" nginx check-stopped
 python3 "$CN_DIR/mac2_edge/configure.py"
-exec python3 "$CN_DIR/shared/service_control.py" nginx start
+exec python3 "$CN_DIR/shared/service_control.py" nginx start "$@"

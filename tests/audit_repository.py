@@ -23,7 +23,7 @@ def main():
         for block in re.findall(r"```bash\n(.*?)```", content, re.S):
             subprocess.run(["/bin/bash", "-n"], input=block, text=True, check=True)
             subprocess.run(["/bin/zsh", "-n"], input=block, text=True, check=True)
-        for relative in re.findall(r"(?:bash|python3|source)\s+((?:shared|mac\d_[a-z_]+)/[a-z_]+\.(?:sh|py))", content):
+        for relative in re.findall(r"(?:bash|python3|source)\s+(setup\.sh|(?:shared|mac\d_[a-z_]+)/[a-z_]+\.(?:sh|py))", content):
             assert (ROOT / relative).is_file(), f"Missing command target in {path}: {relative}"
             references.add(relative)
         for link in re.findall(r"\]\(([^)]+)\)", content):

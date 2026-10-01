@@ -216,9 +216,25 @@ def main():
             require(dns_config.read_text() == original_dns, "DNS restore did not reproduce original config")
             print("PASS: real UDP/TCP DNS for both names, DNS stop, wrong-record injection and exact restoration", flush=True)
 
+            local_dns()
+            dns_log = root / "mac1_dns_client/runtime/dnsmasq.log"
+            run([python, "-c", "import sys; from pathlib import Path; sys.path.insert(0,'shared'); from service_control import configure_dns_logging; configure_dns_logging(Path('mac1_dns_client/runtime/dnsmasq.conf').resolve(), True)"], root)
+            run([dnsmasq, f"--conf-file={dns_config}"], root)
+            result = run(["dig", "@127.0.0.1", "-p", dns_port, "+short", env["APP_DOMAIN"]], root)
+            require(result.stdout.strip() == env["EDGE_IP"], "Background DNS response incorrect")
+            require(dns_log.exists() and "started" in dns_log.read_text(), "Background DNS log is missing")
+            run(["bash", "mac1_dns_client/stop_dns.sh"], root)
+            print("PASS: native background DNS, project-local logs, safe daemon stop", flush=True)
+
             # A bad native config must never result in a listening service.
             run(["bash", "mac2_edge/stop_nginx.sh"], root)
             edge.wait(timeout=10)
+            run([python, "shared/service_control.py", "nginx", "start", "--background"], root)
+            require(curl().returncode == 0, "Background nginx HTTPS failed")
+            bootstrap = run([python, "-c", "import sys; sys.path.insert(0, 'shared'); import launcher; from env_loader import load_env; env=load_env(); env['EDGE_IP']='127.0.0.1'; cert=launcher.fetch_certificate(env); assert launcher.fingerprint(cert)==launcher.fingerprint('mac2_edge/certs/server.crt'); print('Certificate bootstrap fingerprint matches the edge')"], root)
+            require("matches" in bootstrap.stdout, "Certificate bootstrap check did not complete")
+            run(["bash", "mac2_edge/stop_nginx.sh"], root)
+            print("PASS: native background nginx and automatic public-certificate retrieval with matching fingerprint", flush=True)
             native.write_text("invalid_directive;\n")
             result = run([python, "shared/service_control.py", "nginx", "start"], root, ok=False)
             require(result.returncode != 0, "Bad nginx configuration was accepted")
@@ -230,6 +246,11 @@ def main():
                 print(f"\n--- {Path(log.name).name} ---\n{log.read()[-6000:]}", file=sys.stderr)
             raise
         finally:
+            # Native daemon tests outlive their launching subprocess; stop only
+            # this disposable repository's recorded processes before cleanup.
+            for role, name, stop in (("mac1_dns_client", "dnsmasq", "stop_dns.sh"), ("mac2_edge", "nginx", "stop_nginx.sh")):
+                if (root / role / "runtime" / f"{name}.pid").exists():
+                    run(["bash", root / role / stop], root, ok=False)
             for process in reversed(processes):
                 if process.poll() is None:
                     process.send_signal(signal.SIGTERM)

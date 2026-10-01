@@ -2,6 +2,16 @@
 
 Four physical Macs, one private LAN, one DNS server, one HTTPS nginx edge, and two small Python backends. The source of truth is `CN_Project_Doc.pdf`, read in full, especially §§6.1–6.3 and the Phase 1 deliverables in §9. This repository implements Phase 1 only.
 
+**Fastest way to run:** copy the full repository onto every Mac, open Terminal in its folder, and run:
+
+```bash
+bash setup.sh
+```
+
+Select this Mac's number, then **1 — Full setup / start**. The launcher prompts for missing network settings, installs missing dependencies, starts this Mac's services in the background, generates/fetches the certificate, saves and sets DNS, installs trust, and runs the checks. Run it on all four Macs while they wait for each other. Mac 2 displays a certificate fingerprint to paste on Mac 1 and Mac 4; manual certificate-file transfer is unnecessary. Use option **2** to retry client setup once the other Macs are ready, **3** for status/logs, and **4** to stop and restore DNS. See [guided setup](docs/launcher.md).
+
+The numbered steps below are the manual alternative and the evaluation/evidence guide.
+
 Read the steps in order. Commands run in Terminal. A server command stays running: keep its Terminal window open and use a **new Terminal tab** for later commands on that Mac. In each new tab, run `cd "$HOME/Downloads/CN-Private-Network"` after placing the repository there in Step 5. Scripts themselves also work when invoked by absolute path from another directory.
 
 Only edit **network.env** for normal setup. Four IP addresses are entered once; role aliases and domain names are derived automatically. Do not manually edit generated configurations.
