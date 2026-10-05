@@ -61,6 +61,15 @@ class CertificateBootstrapTests(unittest.TestCase):
     def setUp(self):
         self.env = env_loader.load_env(ROOT / "network.env.example")
 
+    def test_fingerprint_accepts_openssl_labels_but_rejects_invalid_input(self):
+        value = ":".join(["ab"] * 32)
+        for prefix in ("", "Fingerprint=", "sha256 Fingerprint=", "SHA-256 Fingerprint= "):
+            with self.subTest(prefix=prefix):
+                self.assertEqual(launcher.normalize_fingerprint(prefix + value), "AB" * 32)
+        for value in ("AB" * 31, "ZZ" * 32, "SHA1 Fingerprint=" + "AB" * 32):
+            with self.assertRaises(ValueError):
+                launcher.normalize_fingerprint(value)
+
     def test_mismatched_fingerprint_never_installs_trust(self):
         with patch.object(launcher, "fetch_certificate", return_value=Path("candidate.crt")), patch.object(launcher, "system_trusts", return_value=False), patch.object(launcher, "show_fingerprint", return_value="AB" * 32), patch.object(launcher, "prompt", return_value="CD" * 32), patch.object(launcher, "script") as script, contextlib.redirect_stdout(io.StringIO()):
             with self.assertRaisesRegex(ValueError, "Fingerprint did not match"):

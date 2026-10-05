@@ -4,7 +4,7 @@ All 12 assignment pages were read, including the boundary between the two phases
 
 ## Checks completed locally
 
-Final results: **36 regression tests passed**, syntax checks passed for **19 Python files and 32 shell files**, and the full real-service integration run passed, including restoration of stopped backends. The repository audit also validated documentation commands, file links, configuration isolation, and the 25-step README.
+Final results: **37 regression tests passed**, syntax checks passed for **19 Python files and 32 shell files**, and the full real-service integration run passed, including restoration of stopped backends. The repository audit also validated documentation commands, file links, configuration isolation, and the 25-step README.
 
 - Python syntax and shell syntax, including Bash/zsh syntax of all documentation command blocks.
 - All README script targets and local Markdown links; Steps 1–25 in the requested order.

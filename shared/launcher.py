@@ -217,6 +217,15 @@ def fingerprint(path):
     return hashlib.sha256(der).hexdigest().upper()
 
 
+def normalize_fingerprint(value):
+    value = re.sub(r"^(?:SHA-?256\s+)?Fingerprint\s*=\s*", "", value.strip(), flags=re.I)
+    value = re.sub(r"[:\s]", "", value).upper()
+    if not re.fullmatch(r"[0-9A-F]{64}", value):
+        raise ValueError("Expected a full SHA-256 fingerprint (64 hexadecimal digits). "
+                         "You may paste the complete OpenSSL SHA256 Fingerprint= line. No trust changes made.")
+    return value
+
+
 def show_fingerprint(path):
     value = fingerprint(path)
     print("\nCompare this full SHA-256 fingerprint on the client Macs:")
@@ -256,10 +265,14 @@ def trust_for_client(role, env):
         if role != 2:
             expected = show_fingerprint(candidate)
             print("The certificate was downloaded automatically, but has not been trusted yet.")
-            print("Paste the full fingerprint DISPLAYED ON RITESH to verify its identity (q to finish later).")
+            print("Paste the current fingerprint DISPLAYED ON RITESH; the full OpenSSL Fingerprint= line is accepted (q to finish later).")
             supplied = prompt("Ritesh SHA-256 fingerprint")
-            if re.sub(r"[:\s]", "", supplied).upper() != expected:
-                raise ValueError("Fingerprint did not match; no trust changes made. Check Ritesh and retry option 2.")
+            if supplied.lower() == "q":
+                raise ValueError("Certificate trust deferred; rerun verification when Ritesh's fingerprint is available.")
+            if normalize_fingerprint(supplied) != expected:
+                raise ValueError("Fingerprint did not match the certificate actually served by nginx; no trust changes made. "
+                                 "Get a fresh fingerprint from Ritesh's active project folder. If it still differs, "
+                                 "check nginx's running configuration path before retrying. Do not reuse an old chat value.")
         print("Installing this project's certificate into the macOS System trust store; sudo may ask for your password.")
         script("shared/trust_certificate.sh", str(candidate))
         if not system_trusts(candidate, env):
