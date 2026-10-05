@@ -8,6 +8,8 @@ import platform
 import re
 import subprocess
 import sys
+import tempfile
+import time
 from pathlib import Path
 from env_loader import ROOT, load_env
 
@@ -95,7 +97,101 @@ def read_backup(identity):
         raise ValueError("Malformed DNS backup")
     for value in state["servers"]:
         ipaddress.ip_address(value)
+    if state.get("ipv6_restore") not in (None, "Automatic"):
+        raise ValueError("Malformed IPv6 restore setting in DNS backup")
     return state
+
+
+def save_backup(state):
+    # Record rollback before changing IPv6. Atomic replacement preserves the
+    # original DNS entries even if setup is interrupted during the repair.
+    with tempfile.NamedTemporaryFile("w", dir=STATE.parent, delete=False) as stream:
+        json.dump(state, stream, indent=2)
+        stream.flush()
+        os.fsync(stream.fileno())
+        candidate = Path(stream.name)
+    try:
+        os.replace(candidate, STATE)
+    finally:
+        candidate.unlink(missing_ok=True)
+
+
+def ipv6_mode(service):
+    info = run("/usr/sbin/networksetup", "-getinfo", service)
+    match = re.search(r"^IPv6:\s*(.+)$", info, re.M)
+    if not match:
+        raise ValueError("Cannot read IPv6 mode; leaving it unchanged")
+    return match[1].strip()
+
+
+def set_ipv6(service, option, expected):
+    subprocess.run(["sudo", "/usr/sbin/networksetup", option, service], check=True)
+    actual = re.sub(r"[^a-z]", "", ipv6_mode(service).lower())
+    if actual != re.sub(r"[^a-z]", "", expected.lower()):
+        raise ValueError("IPv6 setting did not match; original backup retained")
+
+
+def lookup_ok(env, direct=False):
+    for key in ("APP_DOMAIN", "API_DOMAIN"):
+        command = ["/usr/bin/dig", "+time=1", "+tries=1", "+noall", "+answer", "+comments", "+stats"]
+        if direct:
+            command.append("@" + env["DNS_IP"])
+        result = subprocess.run(command + [env[key], "A"], capture_output=True, text=True, timeout=4)
+        answers = re.findall(r"^" + re.escape(env[key]) + r"\.\s+\d+\s+IN\s+A\s+(\S+)", result.stdout, re.M)
+        if (result.returncode or "status: NOERROR" not in result.stdout
+                or f"SERVER: {env['DNS_IP']}#53" not in result.stdout or answers != [env["EDGE_IP"]]):
+            return False
+    return True
+
+
+def wait_for_resolver(env):
+    for attempt in range(3):
+        if lookup_ok(env):
+            return True
+        if attempt < 2:
+            time.sleep(1)
+    return False
+
+
+def ipv6_override_on_service(service):
+    device = next((item["device"] for item in services() if item["name"] == service), None)
+    config = run("/usr/sbin/scutil", "--dns")
+    match = re.search(r"(?:^|\n)resolver #1\n(.*?)(?=\nresolver #|\nDNS configuration \(for|\Z)", config, re.S)
+    if not device or not match:
+        return False
+    block = match[1]
+    first = re.search(r"nameserver\[0\]\s*:\s*(\S+)", block)
+    return bool(first and ":" in first[1] and re.search(r"if_index\s*:\s*\d+\s+\(" + re.escape(device) + r"\)", block))
+
+
+def verify_active_dns(state, env):
+    if wait_for_resolver(env):
+        print("PASS: active default DNS resolves both project names through Yash.")
+        return
+    if not lookup_ok(env, direct=True):
+        raise ValueError("Project DNS is not answering both records correctly. Start Yash's DNS and check network.env; no IPv6 change made")
+    service = state["service"]
+    if not ipv6_override_on_service(service) or ipv6_mode(service) != "Automatic":
+        raise ValueError("Saved DNS differs from the active resolver. Inspect scutil --dns and /etc/resolv.conf. "
+                         "No automatic IPv6 workaround applies; original backup retained")
+    print(f"Detected an IPv6 resolver overriding project DNS on {service}. "
+          "Temporarily using IPv6 Link-local only for this IPv4 lab; IPv6 internet access may be affected. "
+          "Stop/restore will return IPv6 to Automatic.")
+    state["ipv6_restore"] = "Automatic"
+    save_backup(state)
+    try:
+        set_ipv6(service, "-setv6LinkLocal", "Link-local only")
+        change(service, [env["DNS_IP"]])
+        if not wait_for_resolver(env):
+            raise ValueError("Default DNS still differs after the IPv6 workaround; inspect scutil --dns")
+    except (ValueError, OSError, subprocess.SubprocessError, KeyboardInterrupt):
+        # An unsuccessful workaround must not leave a broader network change.
+        set_ipv6(service, "-setv6automatic", "Automatic")
+        state.pop("ipv6_restore")
+        save_backup(state)
+        flush()
+        raise
+    print("PASS: active project DNS verified after repair; DNS and IPv6 rollback saved.")
 
 
 def change(service, entries):
@@ -125,6 +221,10 @@ def main():
         print(f"Current DNS on {state['service']}:\n{raw}")
         print(f"Restoring: {state['servers'] or 'automatic/DHCP (Empty)'}")
         change(state["service"], state["servers"])
+        if state.get("ipv6_restore"):
+            print("Restoring the IPv6 mode saved before automatic DNS repair: Automatic")
+            set_ipv6(state["service"], "-setv6automatic", "Automatic")
+            flush()
         restored = STATE.with_name("client-dns.last-restored.json")
         os.replace(STATE, restored)
         print(f"Original settings restored and verified. Audit copy: {restored}")
@@ -155,6 +255,8 @@ def main():
     change(service, [destination])
     print(f"Saved DNS setting for {service!r}: {destination}. Active resolver still needs the DNS test.")
     print("Restore: bash shared/restore_client_dns.sh")
+    if args.action in ("set", "repair-project"):
+        verify_active_dns(state, env)
 
 
 if __name__ == "__main__":

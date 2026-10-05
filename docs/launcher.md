@@ -1,5 +1,7 @@
 # Guided setup: one command on each Mac
 
+For an existing installation, follow the [restart guide](restart.md) first.
+
 Copy the full project to each Mac and connect all four to the same private LAN. In the project folder, run:
 
 ```bash
@@ -29,6 +31,8 @@ Successful setup prints PASS. Keep the laptops awake. Services run in the backgr
 
 If a dependency is not ready within 90 seconds, the launcher explains what is missing and returns to the menu. Started local services stay running. Complete setup on the other Macs, then use **2**. If Ritesh was waiting for backends and nginx never started, use **1** on Ritesh.
 
+When a local service is already running, the menu defaults to **2** so a failed check does not cause an unnecessary full restart. Setup prints a network configuration ID; compare it on all four laptops.
+
 Use **4** on Ritesh and Dhruv before stopping Yash's DNS. Stop Parul when done. Each Mac must restore its own settings; no remote control or passwords are exchanged between machines. Existing certificate trust remains available for the next course session; README Step 25 includes optional certificate removal.
 
 ## What is automated
@@ -38,7 +42,7 @@ Use **4** on Ritesh and Dhruv before stopping Yash's DNS. Stop Parul when done. 
 - Project-local DNS/nginx configuration generation and native validation.
 - Backend, DNS, and edge service startup in the background, with project-local logs and existing safe stop scripts.
 - SAN certificate creation on Ritesh; automatic public-certificate retrieval and verified fingerprint comparison on the other clients.
-- macOS certificate trust installation and safe client DNS backup/set/restore.
+- macOS certificate trust installation and safe client DNS backup/set/restore, including actual resolver checks and a backed-up, reversible IPv6 workaround for the observed hotspot DNS override.
 - LAN inventory collection and the existing functional verification scripts.
 
 Connecting Wi-Fi, copying the repository, entering real IP addresses, entering administrator passwords, and comparing the certificate fingerprint still require you. Wireshark captures and the five deliberate failure demonstrations remain explicit evaluation steps in the README. Setup does not deliberately break a working network.

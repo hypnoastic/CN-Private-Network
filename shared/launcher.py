@@ -106,6 +106,8 @@ def configure(role, force=False):
     for n in range(1, 5):
         print(f"  {PEOPLE[n]} (Mac {n}): {env[f'MAC{n}_IP']} - {ROLES[n]}")
     print(f"  App: https://{env['APP_DOMAIN']}:{env['HTTPS_PORT']}")
+    config_id = hashlib.sha256("\n".join(f"{key}={env[key]}" for key in sorted(env)).encode()).hexdigest()[:12]
+    print(f"  Network configuration ID: {config_id} (must match on all four laptops)")
     return env
 
 
@@ -402,7 +404,13 @@ def main():
     actions = {"1": "setup", "2": "verify", "3": "status", "4": "stop", "5": "configure"}
     while True:
         print(f"\n{PEOPLE[role]} - {ROLES[role]}\n1. Full setup / start\n2. Finish client setup / run checks\n3. Status, logs, and certificate fingerprint\n4. Stop this Mac's service and restore its original DNS\n5. Create / edit shared network configuration\n0. Exit menu (services keep running)")
-        choice = prompt("Choose", "1")
+        # After a dependency timeout or check failure, retry client checks rather
+        # than unnecessarily stopping and restarting a healthy local service.
+        try:
+            default = "2" if running(role) else "1"
+        except (ValueError, OSError, subprocess.SubprocessError):
+            default = "3"
+        choice = prompt("Choose", default)
         if choice == "0":
             print("Services keep running. Reopen bash setup.sh and choose 4 when finished.")
             return

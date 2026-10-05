@@ -2,6 +2,8 @@
 
 Four physical Macs, one private LAN, one DNS server, one HTTPS nginx edge, and two small Python backends. The source of truth is `CN_Project_Doc.pdf`, read in full, especially §§6.1–6.3 and the Phase 1 deliverables in §9. This repository implements Phase 1 only.
 
+**Restarting after a previous session?** Follow the [restart guide](docs/restart.md) to update every laptop, preserve DNS backups and certificates, check the new IPs, and start in order.
+
 **Fastest way to run:** copy the full repository onto every Mac, open Terminal in its folder, and run:
 
 ```bash

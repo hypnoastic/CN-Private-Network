@@ -164,6 +164,7 @@ class DnsRollbackTests(unittest.TestCase):
         self.stack.enter_context(patch.object(client_dns, "load_env", return_value=self.env))
         self.stack.enter_context(patch.object(client_dns, "read_dns", side_effect=lambda _: (list(self.current), str(self.current))))
         self.stack.enter_context(patch.object(client_dns, "change", side_effect=self.change))
+        self.stack.enter_context(patch.object(client_dns, "verify_active_dns"))
         self.stack.enter_context(contextlib.redirect_stdout(io.StringIO()))
 
     def tearDown(self):
