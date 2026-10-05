@@ -1,0 +1,271 @@
+Actual successful command output, 5 October 2026.
+
+======================================================================
+dns.txt
+======================================================================
+Timestamp: 2026-10-05T16:15:02.776727
+Command: ['bash', 'shared/test_dns.sh']
+Exit: 0
+
+
+$ /usr/bin/dig +time=2 +tries=1 +noall +answer +comments +stats @10.7.23.39 app.team1.test A
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 45429
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; ANSWER SECTION:
+app.team1.test.		0	IN	A	10.7.18.84
+
+;; Query time: 4 msec
+;; SERVER: 10.7.23.39#53(10.7.23.39)
+;; WHEN: Mon Oct 05 16:15:02 IST 2026
+;; MSG SIZE  rcvd: 59
+
+$ /usr/bin/dig +time=2 +tries=1 +noall +answer +comments +stats @10.7.23.39 api.team1.test A
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 21142
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; ANSWER SECTION:
+api.team1.test.		0	IN	A	10.7.18.84
+
+;; Query time: 4 msec
+;; SERVER: 10.7.23.39#53(10.7.23.39)
+;; WHEN: Mon Oct 05 16:15:02 IST 2026
+;; MSG SIZE  rcvd: 59
+
+$ /usr/bin/dig +time=2 +tries=1 +noall +answer +comments +stats app.team1.test A
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 16059
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; ANSWER SECTION:
+app.team1.test.		0	IN	A	10.7.18.84
+
+;; Query time: 2 msec
+;; SERVER: 10.7.23.39#53(10.7.23.39)
+;; WHEN: Mon Oct 05 16:15:02 IST 2026
+;; MSG SIZE  rcvd: 59
+
+$ /usr/bin/dig +time=2 +tries=1 +noall +answer +comments +stats api.team1.test A
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 35922
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; ANSWER SECTION:
+api.team1.test.		0	IN	A	10.7.18.84
+
+;; Query time: 2 msec
+;; SERVER: 10.7.23.39#53(10.7.23.39)
+;; WHEN: Mon Oct 05 16:15:02 IST 2026
+;; MSG SIZE  rcvd: 59
+PASS: both names resolve to Mac 2 via direct and configured Mac 1 DNS.
+
+
+======================================================================
+https.txt
+======================================================================
+Timestamp: 2026-10-05T16:15:04.772685
+Command: ['bash', 'shared/test_https.sh']
+Exit: 0
+
+
+https://app.team1.test:8443/api/status
+HTTP/1.1 200 OK
+Server: nginx/1.31.6
+Date: Mon, 05 Oct 2026 10:45:04 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 33
+Connection: keep-alive
+X-Backend: B
+{"backend": "B", "status": "ok"}
+
+https://api.team1.test:8443/api/status
+HTTP/1.1 200 OK
+Server: nginx/1.31.6
+Date: Mon, 05 Oct 2026 10:45:04 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 33
+Connection: keep-alive
+X-Backend: A
+{"backend": "A", "status": "ok"}
+PASS: HTTPS by both DNS names, system certificate trust, HTTP/1.1.
+
+
+======================================================================
+load-balancing.txt
+======================================================================
+Timestamp: 2026-10-05T16:15:08.557985
+Command: ['bash', 'shared/test_load_balancing.sh']
+Exit: 0
+
+Request 01: X-Backend: B
+Request 02: X-Backend: A
+Request 03: X-Backend: B
+Request 04: X-Backend: A
+Request 05: X-Backend: B
+Request 06: X-Backend: A
+Request 07: X-Backend: B
+Request 08: X-Backend: A
+Request 09: X-Backend: B
+Request 10: X-Backend: A
+PASS: both Backend A and Backend B observed through nginx.
+
+
+======================================================================
+caching.txt
+======================================================================
+Timestamp: 2026-10-05T16:15:09.252134
+Command: ['bash', 'shared/test_caching.sh']
+Exit: 0
+
+
+https://app.team1.test:8443/cache-demo
+HTTP/1.1 200 OK
+Server: nginx/1.31.6
+Date: Mon, 05 Oct 2026 10:45:08 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 72
+Connection: keep-alive
+X-Backend: B
+Cache-Control: public, max-age=60
+ETag: "cn-project-v1"
+{"message":"Computer Networks Phase 1 cache demonstration","version":1}
+Request header: If-None-Match: "cn-project-v1"
+
+https://app.team1.test:8443/cache-demo
+HTTP/1.1 304 Not Modified
+Server: nginx/1.31.6
+Date: Mon, 05 Oct 2026 10:45:09 GMT
+Content-Type: application/json; charset=utf-8
+Connection: keep-alive
+X-Backend: A
+Cache-Control: public, max-age=60
+ETag: "cn-project-v1"
+PASS: full 200 response, Cache-Control, ETag, conditional request, and bodyless 304 Not Modified.
+
+
+======================================================================
+http2.txt
+======================================================================
+Timestamp: 2026-10-05T16:15:10.738073
+Command: ['bash', 'shared/test_https.sh', '--http2']
+Exit: 0
+
+
+https://app.team1.test:8443/api/status
+HTTP/1.1 200 OK
+Server: nginx/1.31.6
+Date: Mon, 05 Oct 2026 10:45:09 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 33
+Connection: keep-alive
+X-Backend: B
+{"backend": "B", "status": "ok"}
+
+https://app.team1.test:8443/api/status
+HTTP/2 200 
+server: nginx/1.31.6
+date: Mon, 05 Oct 2026 10:45:09 GMT
+content-type: application/json; charset=utf-8
+content-length: 33
+x-backend: A
+{"backend": "A", "status": "ok"}
+
+https://api.team1.test:8443/api/status
+HTTP/1.1 200 OK
+Server: nginx/1.31.6
+Date: Mon, 05 Oct 2026 10:45:10 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 33
+Connection: keep-alive
+X-Backend: B
+{"backend": "B", "status": "ok"}
+
+https://api.team1.test:8443/api/status
+HTTP/2 200 
+server: nginx/1.31.6
+date: Mon, 05 Oct 2026 10:45:10 GMT
+content-type: application/json; charset=utf-8
+content-length: 33
+x-backend: A
+{"backend": "A", "status": "ok"}
+PASS: HTTPS by both DNS names, system certificate trust, HTTP/1.1, and HTTP/2.
+
+
+======================================================================
+tls12-validated.txt
+======================================================================
+Timestamp: 2026-10-05T16:15:11.154183
+Command: ['/usr/bin/curl', '--disable', '--noproxy', '*', '--connect-timeout', '4', '--max-time', '15', '--http1.1', '--tlsv1.2', '--tls-max', '1.2', '--verbose', 'https://app.team1.test:8443/api/status']
+Exit: 0
+
+{"backend": "B", "status": "ok"}
+
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0* Host app.team1.test:8443 was resolved.
+* IPv6: (none)
+* IPv4: 10.7.18.84
+*   Trying 10.7.18.84:8443...
+* Connected to app.team1.test (10.7.18.84) port 8443
+* ALPN: curl offers http/1.1
+* (304) (OUT), TLS handshake, Client hello (1):
+} [223 bytes data]
+*  CAfile: /etc/ssl/cert.pem
+*  CApath: none
+* (304) (IN), TLS handshake, Server hello (2):
+{ [74 bytes data]
+* TLSv1.2 (IN), TLS handshake, Certificate (11):
+{ [899 bytes data]
+* TLSv1.2 (IN), TLS handshake, Server key exchange (12):
+{ [300 bytes data]
+* TLSv1.2 (IN), TLS handshake, Server finished (14):
+{ [4 bytes data]
+* TLSv1.2 (OUT), TLS handshake, Client key exchange (16):
+} [37 bytes data]
+* TLSv1.2 (OUT), TLS change cipher, Change cipher spec (1):
+} [1 bytes data]
+* TLSv1.2 (OUT), TLS handshake, Finished (20):
+} [16 bytes data]
+* TLSv1.2 (IN), TLS change cipher, Change cipher spec (1):
+{ [1 bytes data]
+* TLSv1.2 (IN), TLS handshake, Finished (20):
+{ [16 bytes data]
+* SSL connection using TLSv1.2 / ECDHE-RSA-CHACHA20-POLY1305 / [blank] / UNDEF
+* ALPN: server accepted http/1.1
+* Server certificate:
+*  subject: CN=app.team1.test; O=CN Phase 1 team1
+*  start date: Oct  5 09:56:39 2026 GMT
+*  expire date: Oct  5 09:56:39 2027 GMT
+*  subjectAltName: host "app.team1.test" matched cert's "app.team1.test"
+*  issuer: CN=app.team1.test; O=CN Phase 1 team1
+*  SSL certificate verify ok.
+* using HTTP/1.x
+> GET /api/status HTTP/1.1
+> Host: app.team1.test:8443
+> User-Agent: curl/8.7.1
+> Accept: */*
+> 
+* Request completely sent off
+< HTTP/1.1 200 OK
+< Server: nginx/1.31.6
+< Date: Mon, 05 Oct 2026 10:45:11 GMT
+< Content-Type: application/json; charset=utf-8
+< Content-Length: 33
+< Connection: keep-alive
+< X-Backend: B
+< 
+{ [33 bytes data]
+
+100    33  100    33    0     0     81      0 --:--:-- --:--:-- --:--:--    81
+* Connection #0 to host app.team1.test left intact

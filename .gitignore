@@ -12,5 +12,17 @@ shared/trusted/*
 *.pem
 *.csr
 *.srl
-evidence/collected/
+evidence/collected/**
+!evidence/collected/*/
 tests/.work/
+!evidence/collected/01_Yash/balancing-and-caching.png
+!evidence/collected/01_Yash/dns-and-https.png
+!evidence/collected/01_Yash/verified-results.txt
+!evidence/collected/02_Ritesh/direct-backends-and-pings.png
+!evidence/collected/03_Parul/backend-a-and-pings.png
+!evidence/collected/04_Dhruv/https-balancing-caching.jpeg
+!evidence/collected/05_Packets/phase1.pcapng
+!evidence/collected/05_Packets/wireshark-dns-tcp.png
+
+# Local presentation editor files
+~$*

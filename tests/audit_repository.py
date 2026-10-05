@@ -33,7 +33,7 @@ def main():
     assert steps == [str(i) for i in range(1, 26)], "README must have ordered Steps 1–25"
     examples = re.findall(r"^MAC\d_IP=(.+)$", (ROOT / "network.env.example").read_text(), re.M)
     for path in files:
-        if path.name == "network.env.example":
+        if path.name == "network.env.example" or path.suffix.lower() in {".pptx", ".png", ".jpg", ".jpeg", ".pcapng", ".pdf", ".zip"}:
             continue
         content = path.read_text()
         assert not any(value in content for value in examples), f"Example LAN IP hardcoded outside env: {path}"

@@ -2,6 +2,22 @@
 
 Four physical Macs, one private LAN, one DNS server, one HTTPS nginx edge, and two small Python backends. The source of truth is `CN_Project_Doc.pdf`, read in full, especially §§6.1–6.3 and the Phase 1 deliverables in §9. This repository implements Phase 1 only.
 
+## Presentation and recorded evidence
+
+- [Animated PowerPoint: five slides](presentation/CN-Phase1-Yash-Animated.pptx)
+- [Yash's speaking script: approximately 3 minutes 15 seconds](presentation/Yash-Speaking-Script.txt)
+- [Selected evidence organized by teammate](evidence/README.md)
+
+Download the PowerPoint and open it in Slide Show mode for animations. The evidence index explains attribution and which assignment records remain to be collected.
+
+Clone this full repository on each Mac:
+
+```bash
+git clone https://github.com/hypnoastic/CN-Private-Network.git
+cd CN-Private-Network
+bash setup.sh
+```
+
 **Restarting after a previous session?** Follow the [restart guide](docs/restart.md) to update every laptop, preserve DNS backups and certificates, check the new IPs, and start in order.
 
 **Fastest way to run:** copy the full repository onto every Mac, open Terminal in its folder, and run:
@@ -21,7 +37,7 @@ Select your name (Yash, Ritesh, Parul, or Dhruv), then **1 — Full setup / star
 | 3 | Parul | Backend A, port 3001 | Mac 3 / `mac3_backend_a/` |
 | 4 | Dhruv | Backend B, port 3002 + client | Mac 4 / `mac4_backend_b_client/` |
 
-The team ZIP includes **network.env prefilled with your four supplied/detected addresses**. Keep that file; do not overwrite it with the example. The menu accepts names or numbers. On a fresh Git clone, copy the team's `network.env` into the repository, since it stays excluded from Git. All services still read their addresses exclusively from that file.
+The menu accepts names or numbers. On a fresh clone, the launcher helps create `network.env`; use the same real network settings on all four Macs. This file stays excluded from Git. All services read their addresses exclusively from it.
 
 Start Parul first, then Dhruv, Yash, and Ritesh. While a launcher waits, start the next laptop. Ritesh displays the certificate fingerprint for Yash and Dhruv to paste. Use option 2 on any waiting clients once all services are running. Wi-Fi addresses can change; use option 5 to update `network.env` consistently on all four laptops if needed.
 
