@@ -60,7 +60,7 @@ Check peer connectivity on each laptop:
 bash shared/ping_all.sh
 ```
 
-Missing ping replies need investigation, but do not alone prove TCP services are unreachable. The launcher also tests the actual DNS and backend service connections. Complete any Wi-Fi sign-in before setup; dependency installation needs internet access before the private project DNS is selected.
+Missing ping replies need investigation, but do not alone prove TCP services are unreachable. The launcher also tests the actual DNS and backend service connections. Complete any Wi-Fi sign-in before setup; dependency installation needs working internet access. The shared `UPSTREAM_DNS` value must be a reachable existing resolver so normal websites continue resolving during the lab.
 
 ## 4. Start all four laptops
 
@@ -89,3 +89,23 @@ bash shared/verify_phase1.sh
 Expected: DNS, trusted HTTPS, both A/B responses, Cache-Control, ETag, and bodyless **304 Not Modified** pass. The curl wrapper now supports curl versions that do not create an output file for 304. No server or certificate restart is needed for that fix.
 
 After these checks, collect [packet evidence](../evidence/README.md) and perform the five [Phase 1 failure demonstrations](../shared/failure_demo.md). Finish with menu **4** on Ritesh/Dhruv, then Yash, and stop Parul. Everything remains Phase 1 only.
+
+## Internet access during the lab
+
+The updated DNS configuration forwards ordinary website lookups to `UPSTREAM_DNS` in `network.env`, while `.test` names stay local. Use the same configuration on all four laptops. On Yash, after changing that value:
+
+```bash
+bash mac1_dns_client/restart_dns.sh --background
+source <(python3 shared/env_loader.py --shell)
+dig @"$DNS_IP" example.com
+dig example.com
+/usr/bin/curl --connect-timeout 5 --max-time 15 -I https://example.com
+```
+
+Expected: public DNS answers and a validated HTTPS response. If the direct public lookup fails, check that the configured upstream is reachable on this network. When finishing, restore client DNS before stopping Yash. To restore internet DNS immediately on any affected client:
+
+```bash
+bash shared/restore_client_dns.sh
+```
+
+This restores the saved original DNS and any IPv6 setting changed by setup; project names then require starting setup again.

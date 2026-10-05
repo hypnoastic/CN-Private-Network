@@ -74,6 +74,17 @@ class ConfigurationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "cp network.env.example network.env"):
             env_loader.load_env(self.path.with_name("missing.env"))
 
+    def test_upstream_dns_is_optional_and_rejects_loops_and_injection(self):
+        original = env_loader.load_env(self.path)
+        self.path.write_text("\n".join(line for line in self.original.splitlines() if not line.startswith("UPSTREAM_DNS=")))
+        self.assertEqual(env_loader.load_env(self.path)["UPSTREAM_DNS"], "")
+        base = self.path.read_text()
+        for value in (original["DNS_IP"], "127.0.0.1", "0.0.0.0", "224.0.0.1", "255.255.255.255", "example.com", "1.1.1.1#5353", "1.1.1.1;bad"):
+            with self.subTest(value=value):
+                self.path.write_text(base + "\nUPSTREAM_DNS=" + value)
+                with self.assertRaises(ValueError):
+                    env_loader.load_env(self.path)
+
 
 class HttpTests(unittest.TestCase):
     def setUp(self):

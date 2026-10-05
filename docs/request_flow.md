@@ -33,3 +33,5 @@ There are **two distinct TCP connections**: client↔edge and edge↔backend. Ea
 TLS terminates at Mac 2. The backend hop is ordinary HTTP for this Phase 1 topology. To see unencrypted backend headers, capture the edge↔backend connection on Mac 2, Mac 3, or Mac 4. A normal Mac 1 capture sees only its own traffic, not all other LAN conversations.
 
 For `/cache-demo`, a fresh cached representation may be reused for 60 seconds. If the client sends `If-None-Match: "cn-project-v1"`, either backend can return 304 without the representation body. This is HTTP cache validation, independent of DNS lookup.
+
+Ordinary website DNS queries are forwarded by Mac 1 to the configured `UPSTREAM_DNS`. The entire `.test` namespace remains local, including nonexistent private names. This keeps internet name resolution available during the lab without changing the application request flow.

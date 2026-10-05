@@ -4,7 +4,7 @@ All 12 assignment pages were read, including the boundary between the two phases
 
 ## Checks completed locally
 
-Final results: **37 regression tests passed**, syntax checks passed for **19 Python files and 32 shell files**, and the full real-service integration run passed, including restoration of stopped backends. The repository audit also validated documentation commands, file links, configuration isolation, and the 25-step README.
+Final results: **38 regression tests passed**, syntax checks passed for **19 Python files and 32 shell files**, and the full real-service integration run passed, including restoration of stopped backends. The repository audit also validated documentation commands, file links, configuration isolation, and the 25-step README.
 
 - Python syntax and shell syntax, including Bash/zsh syntax of all documentation command blocks.
 - All README script targets and local Markdown links; Steps 1–25 in the requested order.
@@ -20,7 +20,7 @@ Final results: **37 regression tests passed**, syntax checks passed for **19 Pyt
 
 **Real integration test:** actual Homebrew nginx, dnsmasq, OpenSSL, both Python entry points, and Apple's curl were run in a disposable repository copy on this Mac. The copy used loopback and temporary high ports, retaining the production architecture mappings in separate rendering checks. No user DNS settings or system certificate trust were changed.
 
-The integration test verified native DNS syntax, UDP and TCP DNS answers for both names, correct upstream rendering, wildcard backend listening, certificate SANs and key permissions, certificate reuse, trusted-file TLS verification, rejection of untrusted and wrong-name certificates, HTTP/1.1, HTTP/2, a validated TLS 1.2 connection, round robin, cache metadata/304, nginx start/reload/stop, both backend stop scripts, one-backend default retry, both-backend 502, DNS stop, and wrong-record injection/restoration. Paths containing spaces and loading `network.env` from a different working directory were tested in Bash and zsh.
+The integration test verified native DNS syntax, UDP and TCP DNS answers for both names, ordinary DNS forwarding with the entire `.test` namespace kept local, correct upstream rendering, wildcard backend listening, certificate SANs and key permissions, certificate reuse, trusted-file TLS verification, rejection of untrusted and wrong-name certificates, HTTP/1.1, HTTP/2, a validated TLS 1.2 connection, round robin, cache metadata/304, nginx start/reload/stop, both backend stop scripts, one-backend default retry, both-backend 502, DNS stop, and wrong-record injection/restoration. Paths containing spaces and loading `network.env` from a different working directory were tested in Bash and zsh.
 
 The test's explicit certificate trust file and loopback destination override are confined to the developer harness. Official `shared/test_https.sh` resolves the real domain and uses the macOS system trust store without a verification bypass. The launcher's first-contact TLS connection retrieves only the public certificate; its fingerprint must match the value displayed on Mac 2 before installation. All application checks still use system certificate verification.
 

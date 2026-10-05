@@ -114,7 +114,7 @@ Expected: all three filenames exist. Copy before starting services so no machine
 nano network.env
 ```
 
-Change `TEAM_NAME` and the **four `MAC1_IP`–`MAC4_IP` values** to your real values. Keep `DNS_IP=${MAC1_IP}`, `EDGE_IP=${MAC2_IP}`, and the backend aliases as written. Domains derive from `TEAM_NAME`. Keep ports 3001/3002 for the assignment; `HTTPS_PORT` defaults to 8443 and can be changed to 443 if desired. Backend port changes require faculty agreement. Save in nano with Ctrl+O, Enter, Ctrl+X. Use the same file contents on all Macs. Do not run the copy command again after editing.
+Change `TEAM_NAME` and the **four `MAC1_IP`–`MAC4_IP` values** to your real values. Keep `DNS_IP=${MAC1_IP}`, `EDGE_IP=${MAC2_IP}`, and the backend aliases as written. Domains derive from `TEAM_NAME`. Keep ports 3001/3002 for the assignment; `HTTPS_PORT` defaults to 8443 and can be changed to 443 if desired. Backend port changes require faculty agreement. `UPSTREAM_DNS` forwards ordinary website lookups through an existing reachable IPv4 DNS resolver; the example uses Google DNS. On a restricted LAN, use its supplied resolver instead. Leaving this value empty makes DNS lab-only. Save in nano with Ctrl+O, Enter, Ctrl+X. Use the same file contents on all Macs. Do not run the copy command again after editing.
 
 ## STEP 7 — RUN ON ALL FOUR MACS: install dependencies
 
@@ -161,7 +161,7 @@ brew install nginx openssl@3
 brew install --cask wireshark
 ```
 
-Wireshark is also available from [wireshark.org](https://www.wireshark.org/download.html). Install its capture permissions helper if prompted, or use the sudo tcpdump command in the evidence guide. Finish software downloads now: this deliberately local DNS server answers project `.test` names and does not provide public Internet name resolution while it is selected.
+Wireshark is also available from [wireshark.org](https://www.wireshark.org/download.html). Install its capture permissions helper if prompted, or use the sudo tcpdump command in the evidence guide. Project `.test` names stay local. Ordinary website lookups are forwarded to `UPSTREAM_DNS` while the project DNS server runs. Restore client DNS before stopping Mac 1 so clients retain internet name resolution.
 
 Now validate the shared configuration and save the LAN inventory:
 

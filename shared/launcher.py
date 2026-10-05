@@ -55,7 +55,7 @@ def addresses():
 def configuration_text(team, ips, https="8443", previous=None):
     text = (ROOT / "network.env.example").read_text()
     replacements = {"TEAM_NAME": team, "HTTPS_PORT": https, **{f"MAC{n}_IP": value for n, value in enumerate(ips, 1)}}
-    for key in ("BACKEND_A_PORT", "BACKEND_B_PORT"):
+    for key in ("BACKEND_A_PORT", "BACKEND_B_PORT", "UPSTREAM_DNS"):
         if previous and key in previous:
             replacements[key] = previous[key]
     for key, value in replacements.items():

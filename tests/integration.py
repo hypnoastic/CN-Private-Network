@@ -196,6 +196,17 @@ def main():
             def local_dns():
                 dns_config.write_text(dns_config.read_text().replace("port=53\n", f"port={dns_port}\n").replace(f"127.0.0.1,{env['DNS_IP']}", "127.0.0.1"))
 
+            # A separate local resolver proves forwarding without external
+            # internet access. It deliberately knows a .test name too, so we
+            # can prove that the project keeps that namespace local.
+            forward_port = available_port()
+            forward_config = root / "forward-test.conf"
+            forward_config.write_text(f"port={forward_port}\nlisten-address=127.0.0.1\nbind-interfaces\nno-resolv\nno-hosts\n"
+                                      "host-record=outside.example,192.0.2.45\n"
+                                      "host-record=should-stay-private.test,192.0.2.46\n")
+            forwarder = start([dnsmasq, "--keep-in-foreground", f"--conf-file={forward_config}"], "forward-test")
+            wait_port(forwarder, forward_port)
+            dns_config.write_text(dns_config.read_text().replace(f"server={env['UPSTREAM_DNS']}", f"server=127.0.0.1#{forward_port}"))
             local_dns()
             dns = start([dnsmasq, "--keep-in-foreground", f"--conf-file={dns_config}"], "dns")
             wait_port(dns, dns_port)
@@ -203,6 +214,11 @@ def main():
                 for transport in ([], ["+tcp"]):
                     result = run(["/usr/bin/dig", "@127.0.0.1", "-p", dns_port, "+short", *transport, name, "A"], root)
                     require(result.stdout.strip() == env["EDGE_IP"], "dnsmasq UDP/TCP A response incorrect")
+            forwarded = run(["/usr/bin/dig", "@127.0.0.1", "-p", dns_port, "+short", "outside.example", "A"], root)
+            require(forwarded.stdout.strip() == "192.0.2.45", "Ordinary DNS query was not forwarded")
+            private = run(["/usr/bin/dig", "@127.0.0.1", "-p", dns_port, "+noall", "+comments", "should-stay-private.test", "A"], root)
+            require("status: NXDOMAIN" in private.stdout, ".test query leaked to the upstream resolver")
+            print("PASS: ordinary DNS forwarding and .test namespace stays local", flush=True)
             run(["bash", "mac1_dns_client/stop_dns.sh"], root)
             dns.wait(timeout=10)
             run([python, "shared/failure_injection.py", "wrong-record"], root)

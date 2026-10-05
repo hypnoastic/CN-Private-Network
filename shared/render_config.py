@@ -29,6 +29,9 @@ def render(role):
     if role == "dns":
         filename = "dnsmasq.conf"
         values["PID_FILE"] = str(runtime / "dnsmasq.pid")
+        upstream = values["UPSTREAM_DNS"]
+        values["UPSTREAM_DIRECTIVE"] = f"server={upstream}" if upstream else "# Internet DNS forwarding disabled."
+        print(f"Internet DNS forwarding: {upstream or 'disabled; set UPSTREAM_DNS in network.env for normal websites'}")
     else:
         filename = "nginx.conf"
         nginx = brew_binary("nginx", "nginx")

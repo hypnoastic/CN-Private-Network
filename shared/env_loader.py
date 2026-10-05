@@ -10,7 +10,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULTS = {"BACKEND_A_PORT": "3001", "BACKEND_B_PORT": "3002", "HTTPS_PORT": "8443"}
-KEYS = set("TEAM_NAME MAC1_IP MAC2_IP MAC3_IP MAC4_IP DNS_IP EDGE_IP BACKEND_A_IP BACKEND_B_IP APP_DOMAIN API_DOMAIN".split()) | set(DEFAULTS)
+OPTIONAL = {"UPSTREAM_DNS": ""}
+KEYS = set("TEAM_NAME MAC1_IP MAC2_IP MAC3_IP MAC4_IP DNS_IP EDGE_IP BACKEND_A_IP BACKEND_B_IP APP_DOMAIN API_DOMAIN".split()) | set(DEFAULTS) | set(OPTIONAL)
 PRIVATE = tuple(ipaddress.ip_network(n) for n in ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"))
 
 
@@ -31,7 +32,7 @@ def load_env(path=None):
         if value[:1] in ("'", '"') and value[-1:] == value[:1]:
             value = value[1:-1]
         raw[key] = value
-    for key, value in DEFAULTS.items():
+    for key, value in {**DEFAULTS, **OPTIONAL}.items():
         raw.setdefault(key, value)
     missing = KEYS - raw.keys()
     if missing:
@@ -64,6 +65,14 @@ def load_env(path=None):
     for alias, mac in {"DNS_IP": "MAC1_IP", "EDGE_IP": "MAC2_IP", "BACKEND_A_IP": "MAC3_IP", "BACKEND_B_IP": "MAC4_IP"}.items():
         if resolved[alias] != resolved[mac]:
             raise ValueError(f"{alias} must equal {mac} for the required four-Mac architecture")
+    if resolved["UPSTREAM_DNS"]:
+        try:
+            upstream = ipaddress.IPv4Address(resolved["UPSTREAM_DNS"])
+        except ipaddress.AddressValueError as exc:
+            raise ValueError("UPSTREAM_DNS must be one IPv4 DNS server address, or empty for lab-only DNS") from exc
+        if (upstream.is_loopback or upstream.is_unspecified or upstream.is_multicast
+                or upstream.is_reserved or str(upstream) == resolved["DNS_IP"]):
+            raise ValueError("UPSTREAM_DNS must be a unicast resolver other than this project's DNS server; forwarding loops are not allowed")
     for key in DEFAULTS:
         if not resolved[key].isdigit() or not 1 <= int(resolved[key]) <= 65535:
             raise ValueError(f"{key}: port must be an integer from 1 to 65535")

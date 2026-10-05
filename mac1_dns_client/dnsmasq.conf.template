@@ -4,6 +4,7 @@ listen-address=127.0.0.1,@@DNS_IP@@
 bind-interfaces
 no-hosts
 no-resolv
+@@UPSTREAM_DIRECTIVE@@
 local=/test/
 host-record=@@APP_DOMAIN@@,@@EDGE_IP@@
 host-record=@@API_DOMAIN@@,@@EDGE_IP@@
