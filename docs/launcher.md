@@ -10,7 +10,7 @@ bash setup.sh
 
 1. Select your name: **Yash (1), Ritesh (2), Parul (3), or Dhruv (4)**. Names and numbers both work.
 2. Choose **1 — Full setup / start**.
-3. The team ZIP already includes your prefilled `network.env`; setup reuses it. If `network.env` does not exist, enter the team name and four real private IP addresses. The wizard fills the role aliases, domains, and ports. Use identical settings on all Macs; you can copy the resulting `network.env` to the others before running their launcher.
+3. Setup reuses an existing `network.env`. Fresh GitHub clones do not contain this local file. If it does not exist, enter the team name and four real private IP addresses. The wizard fills the role aliases, domains, and ports. Use identical settings on all Macs; you can copy the resulting `network.env` to the others before running their launcher.
 4. Respond to any administrator-password or macOS developer-tools installation prompts.
 5. Run the launcher on the other Macs while the first ones wait. Parul starts A; Dhruv starts B before waiting for client services; Yash starts DNS; Ritesh starts nginx after both backends are available. The launchers can run concurrently on the four physical machines.
 6. Ritesh's laptop prints its certificate's **SHA-256 fingerprint**. Yash and Dhruv automatically fetch the public certificate over the edge's TLS connection. Paste the full fingerprint displayed on Ritesh into their prompt; the complete OpenSSL `SHA256 Fingerprint=` line is also accepted. The launcher requires a match before installing trust. No certificate files need to be copied manually.

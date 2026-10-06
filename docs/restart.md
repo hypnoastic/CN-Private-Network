@@ -1,22 +1,17 @@
 # Restart the four-person Phase 1 lab
 
-Use the updated team ZIP on all four laptops. It contains the current shared `network.env`. Keep your existing project folder: it contains that laptop's original DNS backup and, on Ritesh's laptop, the private certificate key. Do not copy runtime folders, trusted folders, or private keys between laptops.
+Update the existing checkout on every laptop. Keep each laptop's original DNS backup and its own certificate files. Copy only the shared `network.env` when synchronizing actual network settings; do not copy runtime folders, trusted folders, or private keys between laptops.
 
 ## 1. Update each existing copy
 
-Save the latest `CN-Private-Network.zip` in Downloads. For copies already in Downloads:
+Run from your existing repository folder:
 
 ```bash
-cd "$HOME/Downloads"
-unzip -o CN-Private-Network.zip
-cd CN-Private-Network
+git status --short
+git pull --ff-only
 ```
 
-This replaces source files and the supplied team configuration. The ZIP excludes runtime backups, certificates, private keys, and collected evidence, so those existing files remain. Yash's maintained working copy is `/Users/yashkumar/CN/CN-Private-Network` and is already updated:
-
-```bash
-cd /Users/yashkumar/CN/CN-Private-Network
-```
+If Git reports local edits or a conflict, preserve those edits and resolve them before continuing. Do not reset the checkout or overwrite DNS backups. The local `network.env`, certificates, and runtime state are ignored by Git and remain on that laptop. For a first installation, follow the [README](../README.md).
 
 ## 2. Cleanly finish the previous session
 
@@ -28,20 +23,7 @@ bash setup.sh
 
 Choose your name, then **4**. Do this on Ritesh and Dhruv before Yash; stop Parul as well. The stop action works even when `network.env` has changed, because it identifies the existing project process and uses the original machine-bound DNS backup. If restore reports an error, preserve the backup and resolve the error before starting a new session.
 
-The new code restores IPv6 when its own automatic DNS repair changed it. Last session's manually applied IPv6 workaround was not recorded by that old code. On any laptop where you applied it, inspect the saved snapshot:
-
-```bash
-cat shared/runtime/ipv6-before.txt
-networksetup -getinfo "Wi-Fi"
-```
-
-Only if that snapshot says **IPv6: Automatic** and you applied the earlier manual Link-local workaround, return it to its original setting:
-
-```bash
-sudo networksetup -setv6automatic "Wi-Fi"
-```
-
-If the snapshot does not exist, do not guess a previous custom setting. The new launcher preserves pre-existing manual, off, and link-local modes.
+The restore script also reverses IPv6 changes made by the launcher's own DNS repair. Settings changed manually outside the launcher must be restored using the original values you recorded; do not guess a previous custom network setting.
 
 ## 3. Confirm the new network
 
@@ -70,7 +52,7 @@ bash setup.sh
 
 Choose your own name, then **1**. Start **Parul, Dhruv, Yash, then Ritesh**. Move to the next laptop while an earlier one waits for dependencies. Parul starts Backend A, Dhruv starts Backend B, Yash starts DNS, and Ritesh starts nginx once both backends answer.
 
-If a wait expires, local services remain running. Choose **2** after the other laptops are ready. The menu now defaults to **2** when the local service is running; explicit **1** still performs a full restart. If nginx has not yet started on Ritesh, choose **1** there.
+If a wait expires, local services remain running. Choose **2** after the other laptops are ready. The menu defaults to **2** when the local service is running; explicit **1** still performs a full restart. If nginx has not yet started on Ritesh, choose **1** there.
 
 Ritesh displays the certificate SHA-256 fingerprint. It is also available through menu **3**. Paste that full value into the prompts on Yash and Dhruv. Existing valid certificates and trust are reused.
 
@@ -86,7 +68,7 @@ Run on Yash and Dhruv after setup:
 bash shared/verify_phase1.sh
 ```
 
-Expected: DNS, trusted HTTPS, both A/B responses, Cache-Control, ETag, and bodyless **304 Not Modified** pass. The curl wrapper now supports curl versions that do not create an output file for 304. No server or certificate restart is needed for that fix.
+Expected: DNS, trusted HTTPS, both A/B responses, Cache-Control, ETag, and bodyless **304 Not Modified** pass.
 
 After these checks, collect [packet evidence](../evidence/README.md) and perform the five [Phase 1 failure demonstrations](../shared/failure_demo.md). Finish with menu **4** on Ritesh/Dhruv, then Yash, and stop Parul. Everything remains Phase 1 only.
 

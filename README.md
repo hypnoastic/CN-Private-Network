@@ -2,29 +2,18 @@
 
 Four physical Macs, one private LAN, one DNS server, one HTTPS nginx edge, and two small Python backends. The source of truth is `CN_Project_Doc.pdf`, read in full, especially §§6.1–6.3 and the Phase 1 deliverables in §9. This repository implements Phase 1 only.
 
-## Presentation and recorded evidence
+## Quick start
 
-- [Animated PowerPoint: five slides](presentation/CN-Phase1-Yash-Animated.pptx)
-- [Yash's speaking script: approximately 3 minutes 15 seconds](presentation/Yash-Speaking-Script.txt)
-- [Selected evidence organized by teammate](evidence/README.md)
-
-Download the PowerPoint and open it in Slide Show mode for animations. The evidence index explains attribution and which assignment records remain to be collected.
-
-Clone this full repository on each Mac:
+Clone the full repository on all four Macs, connect to the same private LAN, and run the guided setup:
 
 ```bash
+cd "$HOME/Downloads"
 git clone https://github.com/hypnoastic/CN-Private-Network.git
 cd CN-Private-Network
 bash setup.sh
 ```
 
-**Restarting after a previous session?** Follow the [restart guide](docs/restart.md) to update every laptop, preserve DNS backups and certificates, check the new IPs, and start in order.
-
-**Fastest way to run:** copy the full repository onto every Mac, open Terminal in its folder, and run:
-
-```bash
-bash setup.sh
-```
+For an existing checkout, follow the [restart guide](docs/restart.md).
 
 Select your name (Yash, Ritesh, Parul, or Dhruv), then **1 — Full setup / start**. The launcher prompts for missing network settings, installs missing dependencies, starts this Mac's services in the background, generates/fetches the certificate, saves and sets DNS, installs trust, and runs the checks. Run it on all four Macs while they wait for each other. Mac 2 displays a certificate fingerprint to paste on Mac 1 and Mac 4; manual certificate-file transfer is unnecessary. Use option **2** to retry client setup once the other Macs are ready, **3** for status/logs, and **4** to stop and restore DNS. See [guided setup](docs/launcher.md).
 
@@ -41,7 +30,40 @@ The menu accepts names or numbers. On a fresh clone, the launcher helps create `
 
 Start Parul first, then Dhruv, Yash, and Ritesh. While a launcher waits, start the next laptop. Ritesh displays the certificate fingerprint for Yash and Dhruv to paste. Use option 2 on any waiting clients once all services are running. Wi-Fi addresses can change; use option 5 to update `network.env` consistently on all four laptops if needed.
 
-The numbered steps below are the manual alternative and the evaluation/evidence guide.
+## Repository layout
+
+```text
+CN-Private-Network/
+├── README.md                   # Setup, verification, and safe shutdown
+├── network.env.example         # Copy to network.env; enter actual LAN values
+├── setup.sh                    # Interactive per-Mac launcher
+├── mac1_dns_client/            # Yash: dnsmasq and client DNS
+├── mac2_edge/                  # Ritesh: nginx, TLS, and round robin
+├── mac3_backend_a/             # Parul: Python backend on port 3001
+├── mac4_backend_b_client/      # Dhruv: backend on port 3002 and client DNS
+├── shared/                     # Configuration, tests, restore, failure demos, viva
+├── docs/                       # Architecture, request flow, and evaluation guides
+├── evidence/                   # Selected screenshots, test output, packet capture
+└── tests/                      # Repository audit, regressions, local integration
+```
+
+Generated configurations and process logs stay in each role's `runtime/` directory. Mac 2 creates certificates in `mac2_edge/certs/`. Private keys, runtime state, and the local `network.env` are excluded from Git.
+
+## Phase 1 deliverables
+
+| Assignment deliverable | Where to find it |
+|---|---|
+| Architecture and machine roles | [Topology](docs/architecture.md), [IP/service inventory](docs/ip_service_inventory.md) |
+| Request flow and protocol layers | [Request flow](docs/request_flow.md), [protocol guide](docs/protocol_layers.md) |
+| DNS and nginx configuration | `mac1_dns_client/dnsmasq.conf.template`, `mac2_edge/nginx.conf.template`; render using each role's `configure.py` |
+| TLS setup and backend launch | Steps 8–18 below; [guided setup](docs/launcher.md) |
+| Backend source | `mac3_backend_a/backend_a.py`, `mac4_backend_b_client/backend_b.py`, `shared/backend_server.py` |
+| Recorded evidence | [Evidence index](evidence/README.md), [capture instructions](docs/full_evidence_guide.md) |
+| Required failure demonstrations | [Five reversible Phase 1 scenarios](shared/failure_demo.md) |
+| Checkpoint and viva | [Review checklist](docs/phase1_demo_checklist.md), [viva notes](shared/viva_notes.md) |
+| Validation | [Checks and limitations](docs/validation.md) |
+
+The evidence index distinguishes collected results from records still needed for evaluation. The numbered steps below are the manual setup and evaluation guide.
 
 Read the steps in order. Commands run in Terminal. A server command stays running: keep its Terminal window open and use a **new Terminal tab** for later commands on that Mac. In each new tab, run `cd "$HOME/Downloads/CN-Private-Network"` after placing the repository there in Step 5. Scripts themselves also work when invoked by absolute path from another directory.
 

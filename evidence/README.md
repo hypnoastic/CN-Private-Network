@@ -1,6 +1,6 @@
 # Phase 1 evidence: start here
 
-Study these **six screenshots, one packet capture and one combined test log**. The five-slide presentation and timed speaker script are in [presentation/](../presentation/).
+Start with these **six screenshots, one packet capture and one combined test log**, recorded on 5 October 2026. They document that session; rerun the checks when network addresses or services change.
 
 | Folder | Open first | What it proves |
 |---|---|---|
@@ -22,7 +22,7 @@ Dhruv: original `WhatsApp Image 2026-10-05 at 16.57.42.jpeg` follows his certifi
 
 ## Read the results accurately
 
-The Ritesh and Parul screenshots include a failed ping to Ritesh, while backend HTTP tests succeeded. Do not claim all-pairs ping passed. The originals are unmodified. Slide excerpts focus on the named HTTP results and do not serve as ping-success evidence.
+The Ritesh and Parul screenshots include a failed ping to Ritesh, while backend HTTP tests succeeded. Do not claim all-pairs ping passed. The original screenshots are unmodified.
 
 `01_Yash/verified-results.txt` combines the original successful DNS, HTTPS, balancing, caching, HTTP/2 and TLS 1.2 logs. The packet capture contains 532 real packets. No certificate bypass was used in the application checks.
 
@@ -36,8 +36,6 @@ Open `collected/05_Packets/phase1.pcapng` and use:
 
 Yash's DNS self-queries appear on loopback. His connections to the other laptops appear on Wi-Fi. The visible screenshot includes direct backend traffic; it does not show nginx's own upstream TCP connections. The capture contains TLS evidence beyond the screenshot's visible rows.
 
-## Archived material
+## Additional collection
 
-All earlier loose evidence, diagnostic failures, duplicate screenshot and original filenames are preserved in the local `Evidence-Archive-20261005.zip` archive outside this repository. This archive is outside the study folder. Nothing is permanently lost.
-
-The full collection instructions moved to [docs/full_evidence_guide.md](../docs/full_evidence_guide.md). The five required failure demonstrations and the complete four-machine inventory still need their own records for a full assignment submission. This concise set supports the short video and does not claim those missing records exist.
+See the full collection instructions in [docs/full_evidence_guide.md](../docs/full_evidence_guide.md). The five required failure demonstrations and the complete four-machine inventory still need their own records for a full assignment submission. Only the records listed above are included; undocumented demonstrations are not claimed as completed.
